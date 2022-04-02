@@ -1,3 +1,6 @@
+./src/words.js
+
+
 node_modules/
 .expo/
 dist/
