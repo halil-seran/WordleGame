@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, SafeAreaView } from "react-native";
+import { StyleSheet, Text, View, SafeAreaView, Alert } from "react-native";
 import styled from "styled-components/native";
-import { colors, CLEAR, ENTER } from "./src/constants";
+import { colors, CLEAR, ENTER, colorsToEmoji } from "./src/constants";
 import Keyboard from "./src/components/Keyboard/";
+import * as Clipboard from "expo-clipboard";
 
 const NUMBER_OF_TRIES = 6;
 
@@ -11,8 +12,21 @@ const copyArray = (arr) => {
   return [...arr.map((rows) => [...rows])];
 };
 
+const getDayOfTheYear = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now - start;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const day = Math.floor(diff / oneDay);
+  return day;
+};
+
+const dayOfTheYear = getDayOfTheYear();
+
+const words = ["hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker","hello", "world", "baker",];
+
 export default function App() {
-  const word = "hello";
+  const word = words[dayOfTheYear];
   const letters = word.split(""); // ['h','e','l','l','o']
 
   const [rows, setRows] = useState(
@@ -21,8 +35,52 @@ export default function App() {
 
   const [curRow, setCurRow] = useState(0);
   const [curCol, setCurCol] = useState(0);
+  const [gameState, setGameState] = useState("playing"); //lost , won , playing
+
+  useEffect(() => {
+    if (curRow > 0) {
+      checkGameState();
+    }
+  }, [curRow]);
+
+  const checkGameState = () => {
+    if (checkIfWon() && gameState !== "won") {
+      Alert.alert("Congilasinn", "You Won!", [
+        { text: "Share", onPress: shareScore },
+      ]);
+      setGameState("won" && gameState !== "lost");
+    } else if (checkIfLost()) {
+      Alert.alert("Bum", "You Lost!");
+      setGameState("lost");
+    }
+  };
+
+  const shareScore = () => {
+    const textMap = rows
+      .map(
+        (row, i) =>
+          row.map((cell, j) => colorsToEmoji[getCellBGColor(i, j)]).join("") //it may be just a space
+      )
+      .filter((row) => row)
+      .join("\n");
+    const textToShare = `Wordle \n ${textMap}`;
+    Clipboard.setString(textToShare);
+    Alert.alert("Your Score Copied!", "Share Your Score");
+  };
+
+  const checkIfWon = () => {
+    const row = rows[curRow - 1];
+    return row.every((letter, i) => letter === letters[i]);
+  };
+
+  const checkIfLost = () => {
+    return !checkIfWon() && curRow === rows.length;
+  };
 
   const onKeyPressed = (key) => {
+    if (gameState !== "playing") {
+      return;
+    }
     const updatedRows = copyArray(rows);
 
     if (key === CLEAR) {
