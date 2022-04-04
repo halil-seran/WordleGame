@@ -1,18 +1,43 @@
 import React, { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { Alert, ActivityIndicator } from "react-native";
 import { colors, CLEAR, ENTER, colorsToEmoji } from "../../constants";
 import Keyboard from "../Keyboard";
 import * as Clipboard from "expo-clipboard";
 import words from "../../words";
 import { Map, Row, Cell, CellLetter } from "./Game.styles";
 import styles from "./Game.styles"; // this is for StyleSheet
-import { copyArray, getDayOfTheYear } from "../../utils";
+import { copyArray, getDayOfTheYear, getDayKey } from "../../utils";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const NUMBER_OF_TRIES = 6;
 
 const dayOfTheYear = getDayOfTheYear();
+const dayKey = getDayKey();
+//yil bilgisinide eklememiz lazim yoksa seneye calismaz - sonraki yil uyg. calismicak
+
+const game = {
+  day_15: {
+    rows: [[], []],
+    curRow: 4,
+    curCol: 2,
+    gameState: "won",
+  },
+  day_16: {
+    rows: [[], []],
+    curRow: 4,
+    curCol: 2,
+    gameState: "lost",
+  },
+  day_17: {
+    rows: [[], []],
+    curRow: 4,
+    curCol: 2,
+    gameState: "won",
+  },
+};
 
 const Game = () => {
+  //AsyncStorage.removeItem("@game");  // delete the memory
   const word = words[dayOfTheYear];
   const letters = word.split(""); // ['h','e','l','l','o']
 
@@ -23,12 +48,61 @@ const Game = () => {
   const [curRow, setCurRow] = useState(0);
   const [curCol, setCurCol] = useState(0);
   const [gameState, setGameState] = useState("playing"); //lost , won , playing
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (curRow > 0) {
       checkGameState();
     }
   }, [curRow]);
+
+  useEffect(() => {
+    if (loaded) {
+      persistState();
+    }
+  }, [rows, curRow, curCol, gameState]);
+
+  useEffect(() => {
+    readState();
+  }, []);
+
+  const persistState = async () => {
+    const dataForToday = {
+      rows,
+      curRow,
+      curCol,
+      gameState,
+    };
+    try {
+      let existingStateString = await AsyncStorage.getItem("@game");
+      const existingState = existingStateString
+        ? JSON.parse(existingStateString)
+        : {};
+
+      existingState[dayKey] = dataForToday;
+
+      const dataString = JSON.stringify(existingState);
+      console.log("saving", existingState);
+      await AsyncStorage.setItem("@game", dataString);
+    } catch (e) {
+      console.log("persist error, can't write  data ", e);
+    }
+  };
+
+  const readState = async () => {
+    const dataString = await AsyncStorage.getItem("@game");
+    try {
+      const data = JSON.parse(dataString);
+      const day = data[dayKey];
+      setRows(day.rows);
+      setCurCol(day.curCol);
+      setCurRow(day.curRow);
+      setGameState(day.gameState);
+    } catch (e) {
+      console.log("couldn't parse state", e);
+    }
+    setLoaded(true);
+  };
 
   const checkGameState = () => {
     if (checkIfWon() && gameState !== "won") {
@@ -121,6 +195,10 @@ const Game = () => {
   const greenCaps = getAllLettersWithColor(colors.primary);
   const yellowCaps = getAllLettersWithColor(colors.secondary);
   const greyCaps = getAllLettersWithColor(colors.darkgrey);
+
+  if (!loaded) {
+    return <ActivityIndicator />;
+  }
 
   return (
     <>
