@@ -8,33 +8,12 @@ import { Map, Row, Cell, CellLetter } from "./Game.styles";
 import styles from "./Game.styles"; // this is for StyleSheet
 import { copyArray, getDayOfTheYear, getDayKey } from "../../utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import EndScreen from "../EndScreen";
 
 const NUMBER_OF_TRIES = 6;
 
 const dayOfTheYear = getDayOfTheYear();
 const dayKey = getDayKey();
-//yil bilgisinide eklememiz lazim yoksa seneye calismaz - sonraki yil uyg. calismicak
-
-const game = {
-  day_15: {
-    rows: [[], []],
-    curRow: 4,
-    curCol: 2,
-    gameState: "won",
-  },
-  day_16: {
-    rows: [[], []],
-    curRow: 4,
-    curCol: 2,
-    gameState: "lost",
-  },
-  day_17: {
-    rows: [[], []],
-    curRow: 4,
-    curCol: 2,
-    gameState: "won",
-  },
-};
 
 const Game = () => {
   //AsyncStorage.removeItem("@game");  // delete the memory
@@ -106,27 +85,10 @@ const Game = () => {
 
   const checkGameState = () => {
     if (checkIfWon() && gameState !== "won") {
-      Alert.alert("Congilasinn", "You Won!", [
-        { text: "Share", onPress: shareScore },
-      ]);
-      setGameState("won" && gameState !== "lost");
+      setGameState("won");
     } else if (checkIfLost()) {
-      Alert.alert("Bum", "You Lost!");
       setGameState("lost");
     }
-  };
-
-  const shareScore = () => {
-    const textMap = rows
-      .map(
-        (row, i) =>
-          row.map((cell, j) => colorsToEmoji[getCellBGColor(i, j)]).join("") //it may be just a space
-      )
-      .filter((row) => row)
-      .join("\n");
-    const textToShare = `Wordle \n ${textMap}`;
-    Clipboard.setString(textToShare);
-    Alert.alert("Your Score Copied!", "Share Your Score");
   };
 
   const checkIfWon = () => {
@@ -172,6 +134,7 @@ const Game = () => {
   const isCellActive = (row, col) => {
     return row === curRow && col === curCol;
   };
+
   const getCellBGColor = (row, col) => {
     const letter = rows[row][col];
     if (row >= curRow) {
@@ -198,6 +161,16 @@ const Game = () => {
 
   if (!loaded) {
     return <ActivityIndicator />;
+  }
+
+  if (gameState !== "playing") {
+    return (
+      <EndScreen
+        won={gameState === "won"}
+        rows={rows}
+        getCellBGColor={getCellBGColor}
+      />
+    );
   }
 
   return (
