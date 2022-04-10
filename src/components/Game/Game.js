@@ -9,6 +9,7 @@ import styles from "./Game.styles"; // this is for StyleSheet
 import { copyArray, getDayOfTheYear, getDayKey } from "../../utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import EndScreen from "../EndScreen";
+import Animated, { SlideInDown, SlideInRight } from "react-native-reanimated";
 
 const NUMBER_OF_TRIES = 6;
 
@@ -61,7 +62,7 @@ const Game = () => {
       existingState[dayKey] = dataForToday;
 
       const dataString = JSON.stringify(existingState);
-      console.log("saving", existingState);
+      //console.log("saving", existingState);
       await AsyncStorage.setItem("@game", dataString);
     } catch (e) {
       console.log("persist error, can't write  data ", e);
@@ -159,6 +160,13 @@ const Game = () => {
   const yellowCaps = getAllLettersWithColor(colors.secondary);
   const greyCaps = getAllLettersWithColor(colors.darkgrey);
 
+  const getCellStyle = (i, j) => [
+    {
+      borderColor: isCellActive(i, j) ? colors.grey : colors.darkgrey,
+      backgroundColor: getCellBGColor(i, j),
+    },
+  ];
+
   if (!loaded) {
     return <ActivityIndicator />;
   }
@@ -177,17 +185,9 @@ const Game = () => {
     <>
       <Map>
         {rows.map((row, i) => (
-          <Row key={`row-${i}`}>
+          <Row entering={SlideInRight.delay(i * 150)} key={`row-${i}`}>
             {row.map((letter, j) => (
-              <Cell
-                key={`cell-${i}-${j}`}
-                style={{
-                  borderColor: isCellActive(i, j)
-                    ? colors.grey
-                    : colors.darkgrey,
-                  backgroundColor: getCellBGColor(i, j),
-                }}
-              >
+              <Cell key={`cell-${i}-${j}`} style={getCellStyle(i, j)}>
                 <CellLetter>{letter.toUpperCase()}</CellLetter>
               </Cell>
             ))}

@@ -1,7 +1,15 @@
-import { View, Text, TouchableOpacity, Alert, Linking } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Linking,
+  ToastAndroid,
+} from "react-native";
 import React, { useState, useEffect } from "react";
 import { colorsToEmoji } from "../../constants";
 import * as Clipboard from "expo-clipboard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Title,
   Subtitle,
@@ -42,23 +50,37 @@ const GuessDistributionLine = ({ position, amount, percentage }) => {
   );
 };
 
-const GuessDistribution = () => {
+const GuessDistribution = ({ distribution }) => {
+  if (!distribution) {
+    return null;
+  }
+  const sum = distribution.reduce((total, dist) => (dist + total), 0);
   return (
     <>
       <Subtitle>GUESS THE DISTRIBUTION</Subtitle>
-      <GuessDistributionLine position={1} amount={0} percentage={8} />
-      <GuessDistributionLine position={2} amount={0} percentage={8} />
-      <GuessDistributionLine position={3} amount={2} percentage={24} />
-      <GuessDistributionLine position={4} amount={4} percentage={48} />
-      <GuessDistributionLine position={5} amount={8} percentage={95} />
-      <GuessDistributionLine position={6} amount={1} percentage={12} />
+      {distribution.map((dist, index) => (
+        <GuessDistributionLine
+          key={index}
+          position={index + 1}
+          amount={dist}
+          percentage={7 + (90 * dist / sum)}
+        />
+      ))}
     </>
   );
 };
 
 const EndScreen = ({ won = false, rows, getCellBGColor }) => {
   const [secondsTillTomorrow, setSecondsTillTomorrow] = useState(0);
+  const [played, setPlayed] = useState(0);
+  const [winRate, setWinRate] = useState(0);
+  const [curStreak, setCurStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [distribution, setDistribution] = useState(null);
 
+  useEffect(() => {
+    readState();
+  }, []);
   const share = () => {
     const textMap = rows
       .map(
@@ -72,7 +94,7 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
       "https://twitter.com/intent/tweet?text=" + `Wordle  \n${textMap}`;
     Linking.openURL(url);
     Clipboard.setString(textToShare);
-    Alert.alert("Your Score Copied!", "Share Your Score");
+    ToastAndroid.show("Copied!", ToastAndroid.LONG);
   };
 
   useEffect(() => {
@@ -89,6 +111,55 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
     return () => clearInterval(interval);
   }, []);
 
+  const readState = async () => {
+    const dataString = await AsyncStorage.getItem("@game");
+    let data;
+    try {
+      data = JSON.parse(dataString);
+    } catch (e) {
+      console.log("couldn't parse state", e);
+    }
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    setPlayed(keys.length);
+    const numberOfWins = values.filter(
+      (game) => game.gameState === "won"
+    ).length;
+    setWinRate(Math.floor((100 * numberOfWins) / keys.length));
+
+    let curStreakCount = 0;
+    let maxStreakCount = 0;
+    let prevDay = 0;
+    keys.forEach((key) => {
+      const day = parseInt(key.split("-"[1]));
+      if (data[key].gameState === "won" && curStreakCount === 0) {
+        curStreakCount += 1;
+      } else if (data[key].gameState === "won" && prevDay + 1 === day) {
+        curStreakCount += 1;
+      } else {
+        if (curStreakCount > maxStreakCount) {
+          maxStreakCount = curStreakCount;
+        }
+        curStreakCount = data[key].gameState === "won" ? 1 : 0;
+      }
+      prevDay = day;
+    });
+    setCurStreak(curStreakCount);
+    setMaxStreak(maxStreakCount);
+
+    //guess distribution
+
+    const dist = [0, 0, 0, 0, 0, 0];
+
+    values.map((game) => {
+      if (game.gameState === "won") {
+        const tries = game.rows.filter((row) => row[0]).length;
+        dist[tries] = dist[tries] + 1;
+      }
+    });
+    setDistribution(dist);
+  };
+
   const formatSeconds = () => {
     const hours = Math.floor(secondsTillTomorrow / (60 * 60));
     const minutes = Math.floor((secondsTillTomorrow % (60 * 60)) / 60);
@@ -101,12 +172,12 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
       <Title>{won ? "Congratulations!" : "Try Again Tomorrow"}</Title>
       <Subtitle>STATISTICS</Subtitle>
       <HeaderContainer>
-        <Number number={15} label={"Played"} />
-        <Number number={"100%"} label={"Win \nRate"} />
-        <Number number={3} label={"Current \nStreak"} />
-        <Number number={5} label={"Max \nStreak"} />
+        <Number number={played} label={"Played"} />
+        <Number number={winRate + "%"} label={"Win \nRate"} />
+        <Number number={curStreak} label={"Current \nStreak"} />
+        <Number number={maxStreak} label={"Max \nStreak"} />
       </HeaderContainer>
-      <GuessDistribution />
+      <GuessDistribution distribution={distribution} />
       <BottomArea>
         <TimeContainer>
           <BottomAreaText>NEXT WORDLE</BottomAreaText>

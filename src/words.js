@@ -100,7 +100,7 @@ export default [
   "cirit",
   "cisim",
   "civar",
-  "çekiç",
+  "cekic", ///////
   "çekik",
   "çekim",
   "çekiş",

@@ -1,12 +1,13 @@
 import styled from "styled-components/native";
 import { colors } from "../../constants";
 import { StyleSheet } from "react-native";
+import Animated, { SlideInDown, SlideInRight } from "react-native-reanimated";
 
 export const Map = styled.ScrollView`
   align-self: stretch;
   margin-top: 20px;
 `;
-export const Row = styled.View`
+export const Row = styled(Animated.View)`
   flex-direction: row;
   align-self: stretch;
   justify-content: center;
