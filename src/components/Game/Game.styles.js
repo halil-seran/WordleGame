@@ -1,7 +1,7 @@
 import styled from "styled-components/native";
 import { colors } from "../../constants";
 import { StyleSheet } from "react-native";
-import Animated, { SlideInDown, SlideInRight } from "react-native-reanimated";
+import Animated, { SlideInDown, SlideInRight, ZoomIn } from "react-native-reanimated";
 
 export const Map = styled.ScrollView`
   align-self: stretch;

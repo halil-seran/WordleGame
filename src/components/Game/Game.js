@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Alert, ActivityIndicator } from "react-native";
+import { Alert, ActivityIndicator, View } from "react-native";
 import { colors, CLEAR, ENTER, colorsToEmoji } from "../../constants";
 import Keyboard from "../Keyboard";
 import * as Clipboard from "expo-clipboard";
@@ -9,7 +9,12 @@ import styles from "./Game.styles"; // this is for StyleSheet
 import { copyArray, getDayOfTheYear, getDayKey } from "../../utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import EndScreen from "../EndScreen";
-import Animated, { SlideInDown, SlideInRight } from "react-native-reanimated";
+import Animated, {
+  FlipInEasyY,
+  SlideInDown,
+  SlideInRight,
+  ZoomIn,
+} from "react-native-reanimated";
 
 const NUMBER_OF_TRIES = 6;
 
@@ -17,7 +22,7 @@ const dayOfTheYear = getDayOfTheYear();
 const dayKey = getDayKey();
 
 const Game = () => {
-  //AsyncStorage.removeItem("@game");  // delete the memory
+  AsyncStorage.removeItem("@game");  // delete the memory
   const word = words[dayOfTheYear];
   const letters = word.split(""); // ['h','e','l','l','o']
 
@@ -110,7 +115,7 @@ const Game = () => {
     if (key === CLEAR) {
       const prevCol = curCol - 1;
       if (prevCol >= 0) {
-        updatedRows[curRow][curCol] = "";
+        updatedRows[curRow][prevCol] = "";
         setRows(updatedRows);
         setCurCol(prevCol);
       }
@@ -133,7 +138,7 @@ const Game = () => {
     }
   };
   const isCellActive = (row, col) => {
-    return row === curRow && col === curCol;
+    return row === curRow && col === curCol - 1;
   };
 
   const getCellBGColor = (row, col) => {
@@ -162,7 +167,7 @@ const Game = () => {
 
   const getCellStyle = (i, j) => [
     {
-      borderColor: isCellActive(i, j) ? colors.grey : colors.darkgrey,
+      borderColor: isCellActive(i, j) ? colors.grey : colors.darkgrey, 
       backgroundColor: getCellBGColor(i, j),
     },
   ];
@@ -187,7 +192,10 @@ const Game = () => {
         {rows.map((row, i) => (
           <Row entering={SlideInRight.delay(i * 150)} key={`row-${i}`}>
             {row.map((letter, j) => (
-              <Cell key={`cell-${i}-${j}`} style={getCellStyle(i, j)}>
+              <Cell
+                key={`${i}-${j}`}
+                style={getCellStyle(i, j)}
+              >
                 <CellLetter>{letter.toUpperCase()}</CellLetter>
               </Cell>
             ))}
