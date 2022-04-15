@@ -61,7 +61,7 @@ const GuessDistribution = ({ distribution }) => {
       {distribution.map((dist, index) => (
         <GuessDistributionLine
           key={index}
-          position={index + 1}
+          position={index}
           amount={dist}
           percentage={7 + (90 * dist / sum)}
         />
@@ -149,7 +149,7 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
 
     //guess distribution
 
-    const dist = [0, 0, 0, 0, 0, 0];
+    const dist = [0, 0, 0, 0, 0, 0, 0];
 
     values.map((game) => {
       if (game.gameState === "won") {

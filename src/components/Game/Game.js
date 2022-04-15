@@ -3,7 +3,7 @@ import { Alert, ActivityIndicator, View } from "react-native";
 import { colors, CLEAR, ENTER, colorsToEmoji } from "../../constants";
 import Keyboard from "../Keyboard";
 import * as Clipboard from "expo-clipboard";
-import words from "../../words";
+import words from "../../wordsEng";
 import { Map, Row, Cell, CellLetter } from "./Game.styles";
 import styles from "./Game.styles"; // this is for StyleSheet
 import { copyArray, getDayOfTheYear, getDayKey } from "../../utils";
@@ -22,7 +22,7 @@ const dayOfTheYear = getDayOfTheYear();
 const dayKey = getDayKey();
 
 const Game = () => {
-  AsyncStorage.removeItem("@game");  // delete the memory
+  //AsyncStorage.removeItem("@game");  // delete the memory
   const word = words[dayOfTheYear];
   const letters = word.split(""); // ['h','e','l','l','o']
 
